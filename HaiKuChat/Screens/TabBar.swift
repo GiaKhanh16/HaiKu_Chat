@@ -24,12 +24,12 @@ struct TabBarView: View {
 	 @State private var config: FloatingTabConfig = .init()
 	 var body: some View {
 			FloatingTabView(config, selection: $activeTab) { tab, tabBarHeight in
-				 /// YOUR TAB VIEWS
 				 switch tab {
 							 case .home:
 							 Home()
-							 case .profile: Text("Green day")
-
+							 case .profile:
+							 Text("what's up")
+//							 Profile()
 							 }
 				 }
 			}

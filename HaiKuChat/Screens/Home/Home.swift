@@ -11,35 +11,47 @@ struct Home: View {
 	 @State private var offsetY: CGFloat = 0
 	 @FocusState private var isExpanded: Bool
 	 @Namespace private var namespace
-
-	 let items = Array(1...10)
+	 @AppStorage("isFirstTime") private var isFirstTime: Bool = true
+	 @State private var actionSheet: Bool = false
+	 @State private var isTabBarHidden: Bool = false
+	 @State private var navigateToChatRoom: Bool = false
+	 let items = Array(1...5)
 
 	 var body: some View {
 			NavigationStack {
 				 ScrollView(.vertical) {
-							 /// Your Scroll Content
 						DummyScrollContent()
 							 .offset(y: isExpanded ? -offsetY : 0)
-							 /// Attach this to the Root Scroll Content!
 							 .onGeometryChange(for: CGFloat.self) {
 									$0.frame(in: .scrollView(axis: .vertical)).minY
 							 } action: { newValue in
 									offsetY = newValue
 							 }
-
+						NavigationLink(
+							 destination: ChatRoom()
+									.navigationBarBackButtonHidden(true)
+									.onAppear { isTabBarHidden = true }
+									.onDisappear { isTabBarHidden = false }
+									.hideFloatingTabBar(isTabBarHidden),
+							 isActive: $navigateToChatRoom
+						) {
+							 EmptyView()
+						}
 						LazyVStack {
 							 ForEach(items, id: \.self) { item in
 									NavigationLink {
 										 ChatRoom()
 												.navigationBarBackButtonHidden(true)
-												.hideFloatingTabBar(true) // ✅ Hides custom floating tab bar
-												.navigationTransition(
-													 .zoom(sourceID: item, in: namespace)
-												)
+												.onAppear {
+													 isTabBarHidden = true
+												}
+												.onDisappear {
+													 isTabBarHidden = false
+												}
+												.hideFloatingTabBar(isTabBarHidden)
 									} label: {
 										 MessageItem()
-												.matchedTransitionSource(id: item, in: namespace) // ✅ Use `item` here too
-									
+
 									}
 									Divider()
 							 }
@@ -47,7 +59,6 @@ struct Home: View {
 						}
 						.padding(.horizontal)
 				 }
-				 .hideFloatingTabBar(isExpanded) 
 				 .overlay {
 						Rectangle()
 							 .fill(.ultraThinMaterial)
@@ -55,7 +66,6 @@ struct Home: View {
 							 .ignoresSafeArea()
 							 .overlay {
 									ExpandedSearchView(isExpanded: isExpanded)
-//										 .hideFloatingTabBar(true)
 										 .offset(y: isExpanded ? 0 : 70)
 										 .opacity(isExpanded ? 1 : 0)
 										 .allowsHitTesting(isExpanded)
@@ -66,12 +76,17 @@ struct Home: View {
 				 .safeAreaInset(edge: .top) {
 						HeaderView()
 				 }
-				 .scrollTargetBehavior(OnScrollEnd { dy in
-						if offsetY > 100 || (-dy > 1.5 && offsetY > 0) {
-							 isExpanded = true
-						}
-				 })
+				 .hideFloatingTabBar(isExpanded)
 				 .animation(.interpolatingSpring(duration: 0.2), value: isExpanded)
+				 .sheet(isPresented: $actionSheet, content: {
+						RoomActionSheet(actionSheet: $actionSheet, navigateToChatRoom: $navigateToChatRoom)
+							 .presentationDetents([.height(250)])
+							 .presentationDragIndicator(.visible)
+				 })
+				 .sheet(isPresented: $isFirstTime, content: {
+						IntroScreen()
+							 .interactiveDismissDisabled()
+				 })
 			}
 	 }
 
@@ -83,9 +98,9 @@ struct Home: View {
 						Button {
 
 						} label: {
-							 Image(systemName: "plus.rectangle.fill")
+							 Image(systemName: "person.circle.fill")
 									.font(.title2)
-									.foregroundStyle(.blue.mix(with: .yellow, by: 0.2).gradient)
+
 						}
 						.transition(.blurReplace)
 				 }
@@ -107,11 +122,14 @@ struct Home: View {
 						.focused($isExpanded)
 
 				 Button {
-
+						actionSheet.toggle()
 				 } label: {
 
-						Image(systemName: "person.circle.fill")
-							 .font(.title2)
+						Image(systemName: "plus.rectangle.fill")
+							 .font(.title)
+							 .foregroundStyle(
+									.blue.mix(with: .green, by: 0.5).gradient
+							 )
 
 				 }
 				 .opacity(isExpanded ? 0 : 1)
@@ -130,10 +148,8 @@ struct Home: View {
 			.padding(.bottom, 5)
 			.background {
 				 Rectangle()
-						/// Use the same background as the scrollview background!
 						.fill(.background)
 						.ignoresSafeArea()
-						/// Hiding background when the search bar is expanded!
 						.opacity(progress == 0 && !isExpanded ? 1 : 0)
 			}
 	 }

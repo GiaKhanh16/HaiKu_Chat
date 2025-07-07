@@ -18,9 +18,9 @@ struct ChatRoom: View {
 							 Button {
 									dismiss()
 							 } label: {
-									Image(systemName: "info.square.fill")
+									Image(systemName: "chevron.left.circle")
 										 .foregroundStyle(.black)
-										 .font(.system(size: 20))
+										 .font(.system(size: 18))
 							 }
 						}
 						ToolbarItem(placement: .topBarTrailing) {
@@ -36,9 +36,9 @@ struct ChatRoom: View {
 							 Button {
 									sheet.toggle()
 							 } label: {
-									Image(systemName: "info.square.fill")
+							 Text("Alex K")
 										 .foregroundStyle(.black)
-										 .font(.system(size: 20))
+
 							 }
 						}
 				 }
@@ -55,7 +55,7 @@ struct info: View {
 			VStack {
 				 Text("Room ID:")
 			}
-			.presentationDetents([.medium])
+//			.presentationDetents([.medium])
 			.presentationDragIndicator(.visible)
 	 }
 

@@ -16,7 +16,7 @@ struct HaiKuChatApp: App {
 
 	 var body: some Scene {
 			WindowGroup {
-				 TabBarView()
+				 ContentView()
 						.preferredColorScheme(.light)
 			}
 	 }

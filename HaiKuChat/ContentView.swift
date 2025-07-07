@@ -5,15 +5,9 @@ struct ContentView: View {
 
 	 var body: some View {
 			VStack {
-				 if authModel.isSignedIn {
-						TabBarView()
-							 .transition(.opacity.combined(with: .scale))
-				 } else {
-						WelcomeView()
-							 .transition(.opacity.combined(with: .scale))
-				 }
+				 TabBarView()
 			}
-			.animation(.easeInOut(duration: 0.4), value: authModel.isSignedIn)
+//			.animation(.easeInOut(duration: 0.4), value: authModel.isSignedIn)
 			.environmentObject(authModel)
 	 }
 }
@@ -21,3 +15,9 @@ struct ContentView: View {
 #Preview {
 	 ContentView()
 }
+//.transition(.opacity.combined(with: .scale))
+//if authModel.isSignedIn {
+//	 TabBarView()
+//} else {
+//	 WelcomeView()
+//	 }
