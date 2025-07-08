@@ -15,10 +15,12 @@
 		E2362E142E11D1CB002A27CF /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = E2362E132E11D1CB002A27CF /* FirebaseStorage */; };
 		E2362E332E12634F002A27CF /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = E2362E322E12634F002A27CF /* GoogleSignIn */; };
 		E2362E352E12634F002A27CF /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = E2362E342E12634F002A27CF /* GoogleSignInSwift */; };
+		E2591F312E1D999C00465BC4 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = E2591F192E1D999C00465BC4 /* .gitignore */; };
 		E29BB9BC2E133C9800D5A81B /* TabBar in Frameworks */ = {isa = PBXBuildFile; productRef = E29BB9BB2E133C9800D5A81B /* TabBar */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		E2591F192E1D999C00465BC4 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		E2BBE0712E0CE27000D51457 /* HaiKuChat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HaiKuChat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -68,6 +70,7 @@
 			children = (
 				E2BBE0732E0CE27000D51457 /* HaiKuChat */,
 				E2BBE0722E0CE27000D51457 /* Products */,
+				E2591F192E1D999C00465BC4 /* .gitignore */,
 			);
 			sourceTree = "<group>";
 		};
@@ -157,6 +160,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E2591F312E1D999C00465BC4 /* .gitignore in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
