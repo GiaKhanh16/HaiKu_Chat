@@ -1,23 +1,16 @@
 import SwiftUI
 
 struct ContentView: View {
-	 @State var authModel = googleAuth()
+	 @EnvironmentObject var authModel: googleAuth
 
 	 var body: some View {
-			VStack {
-				 TabBarView()
+			Group {
+				 if authModel.isSignedIn {
+						TabBarView()
+				 } else {
+						WelcomeView()
+				 }
 			}
-//			.animation(.easeInOut(duration: 0.4), value: authModel.isSignedIn)
-			.environmentObject(authModel)
+			.animation(.easeInOut(duration: 0.4), value: authModel.isSignedIn)
 	 }
 }
-
-#Preview {
-	 ContentView()
-}
-//.transition(.opacity.combined(with: .scale))
-//if authModel.isSignedIn {
-//	 TabBarView()
-//} else {
-//	 WelcomeView()
-//	 }

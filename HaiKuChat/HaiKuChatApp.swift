@@ -12,11 +12,12 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 @main
 struct HaiKuChatApp: App {
 	 @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
-
+	 @State private var authModel = googleAuth() 
 
 	 var body: some Scene {
 			WindowGroup {
 				 ContentView()
+						.environmentObject(authModel)
 						.preferredColorScheme(.light)
 			}
 	 }

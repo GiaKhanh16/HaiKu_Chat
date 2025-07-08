@@ -1,16 +1,11 @@
-	 //
-	 //  Home.swift
-	 //  WalkthroughAnimation
-	 //
-	 //  Created by Balaji on 16/06/23.
-	 //
-
 import SwiftUI
 
 struct WelcomeView: View {
 	 @EnvironmentObject var auth: googleAuth
 	 @State private var intros: [Intro] = sampleIntros
 	 @State private var activeIntro: Intro?
+	 @State private var shouldAnimate: Bool = true
+
 	 var body: some View {
 			GeometryReader {
 				 let size = $0.size
@@ -21,7 +16,6 @@ struct WelcomeView: View {
 							 Rectangle()
 									.fill(activeIntro.bgColor)
 									.padding(.bottom, -30)
-									/// Circle And Text
 									.overlay {
 										 Circle()
 												.fill(activeIntro.circleColor)
@@ -37,15 +31,12 @@ struct WelcomeView: View {
 															.foregroundStyle(activeIntro.textColor)
 															.frame(width: textSize(activeIntro.text))
 															.offset(x: 10)
-															/// Moving Text based on text Offset
 															.offset(x: activeIntro.textOffset)
 												}
-												/// Moving Circle in the Opposite Direction
 												.offset(x: -activeIntro.circleOffset)
 									}
 						}
 
-							 /// Login Buttons
 						LoginButtons()
 							 .padding(.bottom, safeArea.bottom)
 							 .padding(.top, 10)
@@ -57,23 +48,20 @@ struct WelcomeView: View {
 			.task {
 				 if activeIntro == nil {
 						activeIntro = sampleIntros.first
-							 /// Delaying 0.25s and Starting Animation
-						let nanoSeconds = UInt64(1_000_000_000 * 0.25)
-						try? await Task.sleep(nanoseconds: nanoSeconds)
+						try? await Task.sleep(nanoseconds: UInt64(1_000_000_000 * 0.25))
 						animate(0)
 				 }
 			}
+			.onDisappear {
+				 shouldAnimate = false
+			}
 	 }
 
-			/// Login Buttons
 	 @ViewBuilder
 	 func LoginButtons() -> some View {
 			VStack(spacing: 12) {
 				 Button {
-						auth.isSignedIn.toggle()
-//						Task {
-//							try await auth.signInGoogle()
-//						}
+
 				 } label: {
 						Label("Continue With Apple", systemImage: "applelogo")
 							 .foregroundStyle(.black)
@@ -81,89 +69,81 @@ struct WelcomeView: View {
 				 }
 
 				 Button {
-
-				 } label: {
-						Label("Continue With Phone", systemImage: "phone.fill")
-							 .foregroundStyle(.white)
-							 .fillButton(.buton)
-				 }
-
-				 Button {
-
+						Task {
+							 try await auth.signInGoogle()
+						}
 				 } label: {
 						Label("Sign Up With Email", systemImage: "envelope.fill")
 							 .foregroundStyle(.white)
 							 .fillButton(.buton)
 				 }
 
-				 Button {
 
-				 } label: {
-						Text("Login")
-							 .foregroundStyle(.white)
-							 .fillButton(.black)
-							 .shadow(color: .white, radius: 1)
-				 }
+//				 Button {
+//
+//				 } label: {
+//						Label("Continue With Phone", systemImage: "phone.fill")
+//							 .foregroundStyle(.white)
+//							 .fillButton(.buton)
+//				 }
+//
+
+		
 			}
 			.padding(15)
 	 }
 
-			/// Animating Intros
 	 func animate(_ index: Int, _ loop: Bool = true) {
+			guard shouldAnimate else { return }
+
 			if intros.indices.contains(index + 1) {
-						/// Updating Text and Text Color
 				 activeIntro?.text = intros[index].text
 				 activeIntro?.textColor = intros[index].textColor
 
-						/// Animating Offsets
 				 withAnimation(.snappy(duration: 1), completionCriteria: .removed) {
 						activeIntro?.textOffset = -(textSize(intros[index].text) + 20)
 						activeIntro?.circleOffset = -(textSize(intros[index].text) + 20) / 2
 				 } completion: {
-							 /// Resetting the Offset with Next Slide Color Change
 						withAnimation(.snappy(duration: 0.8), completionCriteria: .logicallyComplete) {
 							 activeIntro?.textOffset = 0
 							 activeIntro?.circleOffset = 0
 							 activeIntro?.circleColor = intros[index + 1].circleColor
 							 activeIntro?.bgColor = intros[index + 1].bgColor
 						} completion: {
-									/// Going to Next Slide
-									/// Simply Recursion
 							 animate(index + 1, loop)
 						}
 				 }
-			} else {
-						/// Looping
-						/// If looping Applied, Then Reset the Index to 0
-				 if loop {
-						animate(0, loop)
-				 }
+			} else if loop && shouldAnimate {
+				 animate(0, loop)
 			}
 	 }
 
-			/// Fetching Text Size based on Fonts
 	 func textSize(_ text: String) -> CGFloat {
-			return NSString(string: text).size(withAttributes: [.font: UIFont.preferredFont(forTextStyle: .largeTitle)]).width
+			return NSString(string: text).size(
+				 withAttributes: [.font: UIFont.preferredFont(forTextStyle: .largeTitle)]
+			).width
 	 }
 }
 
+	 // MARK: - Preview
 #Preview {
 	 WelcomeView()
+			.environmentObject(googleAuth())
 }
 
-/// Custom Modifier
+	 // MARK: - Custom Modifier
 extension View {
 	 @ViewBuilder
 	 func fillButton(_ color: Color) -> some View {
 			self
-			.fontWeight(.bold)
-			.frame(maxWidth: .infinity)
-			.padding(.vertical, 15)
-			.background(color, in: .rect(cornerRadius: 15))
-			}
+				 .fontWeight(.bold)
+				 .frame(maxWidth: .infinity)
+				 .padding(.vertical, 15)
+				 .background(color, in: .rect(cornerRadius: 15))
+	 }
 }
 
-
+	 // MARK: - Model & Sample Data
 
 struct Intro: Identifiable {
 	 var id: UUID = .init()
@@ -175,30 +155,9 @@ struct Intro: Identifiable {
 	 var textOffset: CGFloat = 0
 }
 
-	 /// Sample Intros
 var sampleIntros: [Intro] = [
-	 .init(
-			text: "Five Seven Then Five",
-			textColor: .color4,
-			circleColor: .color4,
-			bgColor: .color1
-	 ),
-	 .init(
-			text: "Let's Haiku Baby",
-			textColor: .color1,
-			circleColor: .color1,
-			bgColor: .color2
-	 ),
-	 .init(
-			text: "I ❤️ Avatar Bending",
-			textColor: .color3,
-			circleColor: .color3,
-			bgColor: .color4
-	 ),
-	 .init(
-			text: "I ❤️ The  Water Tribe",
-			textColor: .color2,
-			circleColor: .color2,
-			bgColor: .color3
-	 ),
+	 .init(text: "Five Seven Then Five", textColor: .color4, circleColor: .color4, bgColor: .color1),
+	 .init(text: "Let's Haiku Baby", textColor: .color1, circleColor: .color1, bgColor: .color2),
+	 .init(text: "I ❤️ Avatar Bending", textColor: .color3, circleColor: .color3, bgColor: .color4),
+	 .init(text: "I ❤️ The Water Tribe", textColor: .color2, circleColor: .color2, bgColor: .color3),
 ]

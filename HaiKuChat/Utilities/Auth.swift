@@ -13,7 +13,14 @@ import GoogleSignInSwift
 @Observable
 class googleAuth: ObservableObject {
 	 var isSignedIn: Bool = false
+	 func login() {
+				 // simulate login
+			DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+				 self.isSignedIn = true
+			}
+	 }
 
+	 @MainActor
 	 func signInGoogle() async throws -> Bool {
 			guard let clientID = FirebaseApp.app()?.options.clientID else {
 				 fatalError("No client ID found in Firebase")
@@ -22,9 +29,9 @@ class googleAuth: ObservableObject {
 			let config = GIDConfiguration(clientID: clientID)
 			GIDSignIn.sharedInstance.configuration = config
 
-			guard let windowScene = await UIApplication.shared.connectedScenes.first as? UIWindowScene,
-						let window = await windowScene.windows.first,
-						let rootViewController = await window.rootViewController else {
+			guard let windowScene =  UIApplication.shared.connectedScenes.first as? UIWindowScene,
+						let window =  windowScene.windows.first,
+						let rootViewController =  window.rootViewController else {
 				 fatalError("Could not find root view controller")
 			}
 
@@ -42,7 +49,14 @@ class googleAuth: ObservableObject {
 			)
 
 			let result = try await Auth.auth().signIn(with: credential)
-			let _ = result.user
-			return true
+			let return_user = result.user
+
+			if !return_user.uid.isEmpty {
+				 self.isSignedIn = true
+				 return true
+			} else {
+				 print("❌ something wrong with Google Auth: invalid user UID")
+				 return false
+			}
 	 }
 }

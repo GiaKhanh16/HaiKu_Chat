@@ -8,7 +8,8 @@ import SwiftUI
 
 struct textField: View {
 	 @State private var inputText: String = ""
-	 
+	 @State private var infoBox: Bool = false
+
 	 var body: some View {
 			VStack {
 				 HStack {
@@ -27,13 +28,15 @@ struct textField: View {
 										 // Update syllable count in real-time
 							 }
 						Spacer()
-						Text("Send")
-							 .font(.caption)
-							 .foregroundStyle(.primary)
-							 .padding(10)
-							 .background(.gray.opacity(0.3))
-							 .cornerRadius(10)
-							 .padding(.trailing, 15)
+						Button {} label: {
+							 Text("Send")
+									.font(.caption)
+									.foregroundStyle(.black)
+									.padding(10)
+									.background(.gray.opacity(0.3))
+									.cornerRadius(10)
+									.padding(.trailing, 15)
+						}
 				 }
 
 				 HStack {
@@ -47,6 +50,13 @@ struct textField: View {
 							 .fontWeight(.medium)
 							 .foregroundStyle(countSyllables(thirdLine()) == 5 ? .green : .primary)
 						Spacer()
+						Button {
+							 infoBox.toggle()
+						} label: {
+							 Image(systemName: "5.lane")
+									.foregroundStyle(.black)
+									.font(.system(size: 22))
+						}
 				 }
 				 .padding(.horizontal)
 			}
@@ -63,6 +73,11 @@ struct textField: View {
 						inputText = String(newValue.dropLast())
 				 }
 			}
+			.sheet(isPresented: $infoBox, content: {
+						InfoBox()
+						.presentationDetents([.height(410)])
+						.presentationBackground(.clear)
+			})
 	 }
 	 private func firstLine() -> String {
 			let lines = inputText.split(separator: "\n", omittingEmptySubsequences: false)

@@ -27,16 +27,6 @@ struct Home: View {
 							 } action: { newValue in
 									offsetY = newValue
 							 }
-						NavigationLink(
-							 destination: ChatRoom()
-									.navigationBarBackButtonHidden(true)
-									.onAppear { isTabBarHidden = true }
-									.onDisappear { isTabBarHidden = false }
-									.hideFloatingTabBar(isTabBarHidden),
-							 isActive: $navigateToChatRoom
-						) {
-							 EmptyView()
-						}
 						LazyVStack {
 							 ForEach(items, id: \.self) { item in
 									NavigationLink {
@@ -76,6 +66,9 @@ struct Home: View {
 				 .safeAreaInset(edge: .top) {
 						HeaderView()
 				 }
+				 .onChange(of: navigateToChatRoom) { _ , isActive in
+						isTabBarHidden = isActive
+				 }
 				 .hideFloatingTabBar(isExpanded)
 				 .animation(.interpolatingSpring(duration: 0.2), value: isExpanded)
 				 .sheet(isPresented: $actionSheet, content: {
@@ -87,6 +80,13 @@ struct Home: View {
 						IntroScreen()
 							 .interactiveDismissDisabled()
 				 })
+				 .navigationDestination(isPresented: $navigateToChatRoom) {
+						ChatRoom()
+							 .navigationBarBackButtonHidden(true)
+							 .onAppear { isTabBarHidden = true }
+							 .onDisappear { isTabBarHidden = false }
+							 .hideFloatingTabBar(isTabBarHidden)
+				 }
 			}
 	 }
 
