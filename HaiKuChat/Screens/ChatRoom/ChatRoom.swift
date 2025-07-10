@@ -3,6 +3,9 @@ import SwiftUI
 struct ChatRoom: View {
 	 @State private var sheet: Bool = false
 	 @Environment(\.dismiss) private var dismiss
+	 var room: ChatRoomStruct
+
+
 	 var body: some View {
 			NavigationView {
 				 VStack(spacing: 20) {
@@ -33,12 +36,8 @@ struct ChatRoom: View {
 							 }
 						}
 						ToolbarItem(placement: .principal) {
-							 Button {
-									sheet.toggle()
-							 } label: {
-							 Text("Khanh's Haiku")
+							 Text(room.name)
 										 .foregroundStyle(.black)
-							 }
 						}
 				 }
 				 .sheet(isPresented: $sheet) {
@@ -48,76 +47,31 @@ struct ChatRoom: View {
 				 }
 			}
 	 }
-}
-
-struct info: View {
-	 var body: some View {
-			VStack {
-
-						// Add Member Button
-				 HStack(spacing: 16) {
-						Image(systemName: "person.crop.rectangle.badge.plus.fill")
-							 .font(.title2)
-							 .foregroundColor(.blue)
-							 .frame(width: 40, height: 40)
-							 .background(Color.blue.opacity(0.1))
-							 .clipShape(RoundedRectangle(cornerRadius: 12))
-
-						VStack(alignment: .leading, spacing: 2) {
-							 Text("Add Member")
-									.font(.headline)
-							 Text("Add a new member to this chat room")
-									.font(.caption)
-									.foregroundColor(.secondary)
-						}
-
-							 //							 Spacer()
-				 }
-				 .frame(maxWidth: .infinity, alignment: .leading)
-				 .padding()
-				 .background(Color.gray.opacity(0.1))
-				 .clipShape(RoundedRectangle(cornerRadius: 16))
-
-						// Member Count
-				 Text("Members - 2")
-						.font(.subheadline)
-						.fontWeight(.semibold)
+	 @ViewBuilder
+	 func Messaging(sender: String, receiver: String) -> some View {
+			VStack(spacing: 30) {
+				 Text(sender)
+						.padding()
+						.lineSpacing(15)
+						.background(.gray.opacity(0.2))
+						.cornerRadius(10)
 						.frame(maxWidth: .infinity, alignment: .leading)
-						.padding(.top, 10)
 
-						// Member List
-				 VStack(spacing: 12) {
-						HStack {
-							 Image(systemName: "person.circle.fill")
-									.font(.title2)
-									.foregroundColor(.green)
-							 Text("Khanh Nguyen")
-									.font(.body)
-							 Spacer()
-						}
-						Divider()
-						HStack {
-							 Image(systemName: "person.circle.fill")
-									.font(.title2)
-									.foregroundColor(.green)
-							 Text("Khanh Nguyen")
-									.font(.body)
-							 Spacer()
-						}
-				 }
-				 .padding()
-				 .background(Color.gray.opacity(0.05))
-				 .clipShape(RoundedRectangle(cornerRadius: 12))
-				 Spacer()
+				 Text(receiver)
+						.padding()
+						.lineSpacing(15)
+						.background(.gray.opacity(0.2))
+						.cornerRadius(10)
+						.frame(maxWidth: .infinity, alignment: .trailing)
 			}
 			.padding()
 	 }
 
 }
 
-
-#Preview {
-	 ChatRoom()
-}
-
-
+//
+//#Preview {
+//	 Home()
+//}
+//
+//

@@ -106,5 +106,5 @@ struct textField: View {
 }
 
 #Preview {
-	 ChatRoom()
+	 Home()
 }

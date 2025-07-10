@@ -12,12 +12,14 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 @main
 struct HaiKuChatApp: App {
 	 @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
-	 @State private var authModel = googleAuth() 
+	 @State private var authModel = authCenter()
+	 @State private var firestore = firestoreActions()
 
 	 var body: some Scene {
 			WindowGroup {
 				 ContentView()
 						.environmentObject(authModel)
+						.environmentObject(firestore)
 						.preferredColorScheme(.light)
 			}
 	 }

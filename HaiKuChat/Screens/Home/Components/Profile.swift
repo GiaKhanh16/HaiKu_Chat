@@ -1,7 +1,19 @@
-//
-//  Profile.swift
-//  HaiKuChat
-//
-//  Created by Khanh Nguyen on 7/7/25.
-//
+import SwiftUI
 
+struct ProfilePage: View {
+	 @EnvironmentObject var auth: authCenter
+
+	 var firstName: String {
+			let fullName = auth.userSession?.displayName ?? ""
+			return fullName.components(separatedBy: " ").first ?? ""
+	 }
+
+	 var body: some View {
+			Text("hello \(firstName)")
+			Button {
+				 auth.signOut()
+			} label: {
+				 Text("Logout")
+			}
+	 }
+}

@@ -7,8 +7,16 @@ struct RoomActionSheet: View {
 	 @State private var currentTab = "Create Room"
 	 @State private var roomID = ""
 	 @State private var roomName = ""
+	 @State private var roomNameError: String?
+
+	 @State var firestore = firestoreActions()
 
 	 let tabs = ["Create Room", "Join Room"]
+
+	 func generateShortID() -> String {
+			let characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+			return String((0..<6).compactMap { _ in characters.randomElement() })
+	 }
 
 	 var body: some View {
 			VStack(alignment: .leading, spacing: 24) {
@@ -29,7 +37,6 @@ struct RoomActionSheet: View {
 												ZStack {
 													 Rectangle()
 															.fill(.gray.opacity(0.2))
-
 													 Rectangle()
 															.fill(.ultraThinMaterial)
 												}
@@ -63,18 +70,29 @@ struct RoomActionSheet: View {
 												ZStack {
 													 Rectangle()
 															.fill(.gray.opacity(0.2))
-
 													 Rectangle()
 															.fill(.ultraThinMaterial)
 												}
 												.clipShape(.rect(cornerRadius: 15))
 										 }
 
+									if let error = roomNameError {
+										 Text(error)
+												.font(.caption)
+												.foregroundColor(.red)
+												.transition(.opacity)
+									}
+
 									Button(
 										 action: {
-												dismiss()
-												DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-													 navigateToChatRoom = true
+												let trimmed = roomName.trimmingCharacters(in: .whitespacesAndNewlines)
+												if trimmed.isEmpty {
+													 roomNameError = "Room name can't be empty."
+												} else if trimmed.count > 20  {
+													 roomNameError = "Room name is too long (max 25 characters)."
+												} else {
+													 roomNameError = nil
+													 firestore.createRoom(withName: trimmed, roomID: generateShortID())
 												}
 										 },
 										 label: {
@@ -93,12 +111,21 @@ struct RoomActionSheet: View {
 						}
 				 }
 				 .padding(.top)
-				 Spacer()
 
+				 Spacer()
 			}
 			.padding()
 			.padding(.top, 30)
 			.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+//			.onChange(of: firestore.roomID) { _, newID in
+//				 if let id = newID {
+//						print("🟢 Room created and ready: \(id)")
+//						DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+//							 dismiss()
+//							 navigateToChatRoom = true
+//						}
+//				 }
+//			}
 	 }
 }
 

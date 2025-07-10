@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct InfoBox: View {
+	 @EnvironmentObject var firestore: firestoreActions
 	 var body: some View {
 			VStack(spacing: 20) {
 				 VStack {
@@ -18,7 +19,7 @@ struct InfoBox: View {
 									.font(.title3.bold())
 									.foregroundColor(.primary)
 							 Spacer()
-							 Text("RANDOMID25")
+							 Text("ROOMID25")
 									.font(.caption)
 									.foregroundColor(.secondary)
 						}
@@ -104,7 +105,7 @@ struct InfoBox: View {
 									.clipShape(RoundedRectangle(cornerRadius: 12))
 
 							 VStack(alignment: .leading, spacing: 2) {
-									Text("Leave Chat Room")
+									Text("Leave Room")
 										 .font(.headline)
 									Text("Say bye-bye to this chat room")
 										 .font(.caption)
@@ -138,5 +139,5 @@ struct InfoBox: View {
 }
 
 #Preview {
-	 ChatRoom()
+	 Home()
 }

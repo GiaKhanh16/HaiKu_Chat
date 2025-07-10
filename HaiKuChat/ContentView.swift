@@ -1,16 +1,16 @@
 import SwiftUI
 
 struct ContentView: View {
-	 @EnvironmentObject var authModel: googleAuth
+	 @EnvironmentObject var authModel: authCenter
 
 	 var body: some View {
 			Group {
-				 if authModel.isSignedIn {
+				 if (authModel.userSession != nil) {
 						TabBarView()
 				 } else {
 						WelcomeView()
 				 }
 			}
-			.animation(.easeInOut(duration: 0.4), value: authModel.isSignedIn)
+			.animation(.easeInOut(duration: 0.6), value: authModel.userSession)
 	 }
 }

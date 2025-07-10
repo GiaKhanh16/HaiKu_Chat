@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct Home: View {
+	 @EnvironmentObject var firestore: firestoreActions
 	 @State private var offsetY: CGFloat = 0
 	 @FocusState private var isExpanded: Bool
 	 @Namespace private var namespace
@@ -15,7 +16,7 @@ struct Home: View {
 	 @State private var actionSheet: Bool = false
 	 @State private var isTabBarHidden: Bool = false
 	 @State private var navigateToChatRoom: Bool = false
-	 let items = Array(1...5)
+	 @State var profilePage: Bool = false
 
 	 var body: some View {
 			NavigationStack {
@@ -28,19 +29,16 @@ struct Home: View {
 									offsetY = newValue
 							 }
 						LazyVStack {
-							 ForEach(items, id: \.self) { item in
+							 ForEach(firestore.chatRooms) { room in
 									NavigationLink {
-										 ChatRoom()
+										 ChatRoom(room: room)
 												.navigationBarBackButtonHidden(true)
-												.onAppear {
-													 isTabBarHidden = true
-												}
-												.onDisappear {
-													 isTabBarHidden = false
-												}
+												.onAppear { isTabBarHidden = true }
+												.onDisappear { isTabBarHidden = false }
 												.hideFloatingTabBar(isTabBarHidden)
 									} label: {
-										 MessageItem()
+										 MessageItem(room: room)
+
 
 									}
 									Divider()
@@ -80,12 +78,22 @@ struct Home: View {
 						IntroScreen()
 							 .interactiveDismissDisabled()
 				 })
-				 .navigationDestination(isPresented: $navigateToChatRoom) {
-						ChatRoom()
-							 .navigationBarBackButtonHidden(true)
+//				 
+//				 .navigationDestination(isPresented: $navigateToChatRoom) {
+//						ChatRoom()
+//							 .navigationBarBackButtonHidden(true)
+//							 .onAppear { isTabBarHidden = true }
+//							 .onDisappear { isTabBarHidden = false }
+//							 .hideFloatingTabBar(isTabBarHidden)
+//				 }
+				 .navigationDestination(isPresented: $profilePage) {
+						ProfilePage()
 							 .onAppear { isTabBarHidden = true }
 							 .onDisappear { isTabBarHidden = false }
 							 .hideFloatingTabBar(isTabBarHidden)
+				 }
+				 .onAppear {
+						firestore.fetchRoomsCreatedByCurrentUser()
 				 }
 			}
 	 }
@@ -96,7 +104,7 @@ struct Home: View {
 			HStack(spacing: 20) {
 				 if !isExpanded {
 						Button {
-
+							 profilePage.toggle()
 						} label: {
 							 Image(systemName: "person.circle.fill")
 									.font(.title2)

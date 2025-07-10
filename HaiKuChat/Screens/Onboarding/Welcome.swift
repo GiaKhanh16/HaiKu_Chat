@@ -1,7 +1,8 @@
 import SwiftUI
+import AuthenticationServices
 
 struct WelcomeView: View {
-	 @EnvironmentObject var auth: googleAuth
+	 @EnvironmentObject var auth: authCenter
 	 @State private var intros: [Intro] = sampleIntros
 	 @State private var activeIntro: Intro?
 	 @State private var shouldAnimate: Bool = true
@@ -48,47 +49,78 @@ struct WelcomeView: View {
 			.task {
 				 if activeIntro == nil {
 						activeIntro = sampleIntros.first
-						try? await Task.sleep(nanoseconds: UInt64(1_000_000_000 * 0.25))
+						try? await Task.sleep(nanoseconds: UInt64(1_000_000_000 * 1))
 						animate(0)
 				 }
 			}
 			.onDisappear {
 				 shouldAnimate = false
 			}
+			.overlay {
+				 if auth.isLoading {
+						LoadingScreen()
+				 }
+			}
+	 }
+
+	 @ViewBuilder
+	 func LoadingScreen() -> some View {
+			ZStack {
+				 Rectangle()
+						.fill(.ultraThinMaterial)
+
+				 ProgressView()
+						.frame(width: 45, height: 45)
+						.background(.background, in: .rect(cornerRadius: 5))
+			}
 	 }
 
 	 @ViewBuilder
 	 func LoginButtons() -> some View {
 			VStack(spacing: 12) {
-				 Button {
+				 SignInWithAppleButton(.signIn) { request in
 
-				 } label: {
-						Label("Continue With Apple", systemImage: "applelogo")
-							 .foregroundStyle(.black)
-							 .fillButton(.white)
+						let nonce = auth.randomNonceString()
+						auth.nonce = nonce
+						request.requestedScopes = [.email, .fullName]
+						request.nonce = auth.sha256(auth.nonce!)
+
+				 } onCompletion: { result in
+						switch result {
+							 case .success(let authorization):
+									auth.loginWithApple(authorization)
+							 case .failure(let error):
+									print(error)
+						}
 				 }
+						.frame(maxHeight: 50)
+						.signInWithAppleButtonStyle(.whiteOutline)
 
+				 HStack {
+						VStack {
+							 Divider()
+									.background(Color.white)
+						}
+						Text("or")
+							 .foregroundColor(.white)
+						VStack {
+							 Divider()
+									.background(Color.white)
+						}
+				 }
 				 Button {
 						Task {
 							 try await auth.signInGoogle()
 						}
 				 } label: {
-						Label("Sign Up With Email", systemImage: "envelope.fill")
+						Label("Sign Up With Google", systemImage: "envelope.fill")
 							 .foregroundStyle(.white)
 							 .fillButton(.buton)
 				 }
 
 
-//				 Button {
-//
-//				 } label: {
-//						Label("Continue With Phone", systemImage: "phone.fill")
-//							 .foregroundStyle(.white)
-//							 .fillButton(.buton)
-//				 }
-//
 
-		
+
 			}
 			.padding(15)
 	 }
@@ -126,10 +158,7 @@ struct WelcomeView: View {
 }
 
 	 // MARK: - Preview
-#Preview {
-	 WelcomeView()
-			.environmentObject(googleAuth())
-}
+
 
 	 // MARK: - Custom Modifier
 extension View {
@@ -157,7 +186,6 @@ struct Intro: Identifiable {
 
 var sampleIntros: [Intro] = [
 	 .init(text: "Five Seven Then Five", textColor: .color4, circleColor: .color4, bgColor: .color1),
-	 .init(text: "Let's Haiku Baby", textColor: .color1, circleColor: .color1, bgColor: .color2),
-	 .init(text: "I ❤️ Avatar Bending", textColor: .color3, circleColor: .color3, bgColor: .color4),
+	 .init(text: "You, me Haiku Together", textColor: .color1, circleColor: .color1, bgColor: .color2),
 	 .init(text: "I ❤️ The Water Tribe", textColor: .color2, circleColor: .color2, bgColor: .color3),
 ]
