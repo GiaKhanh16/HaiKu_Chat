@@ -31,6 +31,3 @@
 //	 }
 //}
 //
-//#Preview {
-//	 Messaging(sender: "Five seven then five\nSyllables marks a Haiku\nRemarkable oath", receiver: "Five seven then five\nSyllables marks a Haiku\nRemarkable oath")
-//}

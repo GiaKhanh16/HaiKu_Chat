@@ -28,7 +28,7 @@ struct WelcomeView: View {
 												})
 												.background(alignment: .leading) {
 													 Text(activeIntro.text)
-															.font(.largeTitle)
+															.font(.title)
 															.foregroundStyle(activeIntro.textColor)
 															.frame(width: textSize(activeIntro.text))
 															.offset(x: 10)
@@ -128,27 +128,32 @@ struct WelcomeView: View {
 	 func animate(_ index: Int, _ loop: Bool = true) {
 			guard shouldAnimate else { return }
 
-			if intros.indices.contains(index + 1) {
-				 activeIntro?.text = intros[index].text
-				 activeIntro?.textColor = intros[index].textColor
-
-				 withAnimation(.snappy(duration: 1), completionCriteria: .removed) {
-						activeIntro?.textOffset = -(textSize(intros[index].text) + 20)
-						activeIntro?.circleOffset = -(textSize(intros[index].text) + 20) / 2
-				 } completion: {
-						withAnimation(.snappy(duration: 0.8), completionCriteria: .logicallyComplete) {
-							 activeIntro?.textOffset = 0
-							 activeIntro?.circleOffset = 0
-							 activeIntro?.circleColor = intros[index + 1].circleColor
-							 activeIntro?.bgColor = intros[index + 1].bgColor
-						} completion: {
-							 animate(index + 1, loop)
-						}
+			guard intros.indices.contains(index) else {
+				 if loop {
+						animate(0, loop)
 				 }
-			} else if loop && shouldAnimate {
-				 animate(0, loop)
+				 return
+			}
+
+				 // Set activeIntro to current intro fully
+			activeIntro?.text = intros[index].text
+			activeIntro?.textColor = intros[index].textColor
+			activeIntro?.circleColor = intros[index].circleColor
+			activeIntro?.bgColor = intros[index].bgColor
+
+			withAnimation(.snappy(duration: 1), completionCriteria: .removed) {
+				 activeIntro?.textOffset = -(textSize(intros[index].text) + 20)
+				 activeIntro?.circleOffset = -(textSize(intros[index].text) + 20) / 2.3
+			} completion: {
+				 withAnimation(.snappy(duration: 0.8), completionCriteria: .logicallyComplete) {
+						activeIntro?.textOffset = 0
+						activeIntro?.circleOffset = 0
+				 } completion: {
+						animate(index + 1, loop)
+				 }
 			}
 	 }
+
 
 	 func textSize(_ text: String) -> CGFloat {
 			return NSString(string: text).size(
@@ -186,6 +191,9 @@ struct Intro: Identifiable {
 
 var sampleIntros: [Intro] = [
 	 .init(text: "Five Seven Then Five", textColor: .color4, circleColor: .color4, bgColor: .color1),
-	 .init(text: "You, me Haiku Together", textColor: .color1, circleColor: .color1, bgColor: .color2),
+	 .init(text: "Let's Haiku Together", textColor: .color1, circleColor: .color1, bgColor: .color2),
 	 .init(text: "I ❤️ The Water Tribe", textColor: .color2, circleColor: .color2, bgColor: .color3),
 ]
+#Preview {
+	 WelcomeView()
+}

@@ -20,7 +20,7 @@ struct MessageItem: View {
 									.font(.caption)
 									.foregroundStyle(.gray)
 						}
-						Text("I love your hair")
+						Text("Green Day Green Day")
 							 .font(.callout)
 							 .fontWeight(.light)
 							 .foregroundStyle(.gray)

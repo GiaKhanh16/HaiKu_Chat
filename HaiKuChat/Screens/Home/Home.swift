@@ -1,10 +1,3 @@
-	 //
-	 //  ContentView.swift
-	 //  PullToSearch
-	 //
-	 //  Created by Balaji Venkatesh on 31/05/25.
-	 //
-
 import SwiftUI
 
 struct Home: View {
@@ -31,7 +24,7 @@ struct Home: View {
 						LazyVStack {
 							 ForEach(firestore.chatRooms) { room in
 									NavigationLink {
-										 ChatRoom(room: room)
+										 chatRoom(room: room)
 												.navigationBarBackButtonHidden(true)
 												.onAppear { isTabBarHidden = true }
 												.onDisappear { isTabBarHidden = false }
@@ -78,14 +71,17 @@ struct Home: View {
 						IntroScreen()
 							 .interactiveDismissDisabled()
 				 })
-//				 
-//				 .navigationDestination(isPresented: $navigateToChatRoom) {
-//						ChatRoom()
-//							 .navigationBarBackButtonHidden(true)
-//							 .onAppear { isTabBarHidden = true }
-//							 .onDisappear { isTabBarHidden = false }
-//							 .hideFloatingTabBar(isTabBarHidden)
-//				 }
+				 .navigationDestination(isPresented: $navigateToChatRoom) {
+						if let room = firestore.currentRoom {
+							 testChat(room: room)
+									.navigationBarBackButtonHidden(true)
+									.onAppear { isTabBarHidden = true }
+									.onDisappear { isTabBarHidden = false }
+									.hideFloatingTabBar(isTabBarHidden)
+						} else {
+							 Text("❌ Failed to load chat room.")
+						}
+				 }
 				 .navigationDestination(isPresented: $profilePage) {
 						ProfilePage()
 							 .onAppear { isTabBarHidden = true }

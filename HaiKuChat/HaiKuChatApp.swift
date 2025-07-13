@@ -29,3 +29,13 @@ struct HaiKuChatApp: App {
 #Preview {
 	 ContentView()
 }
+
+	 //testChat(
+	 //	 room: ChatRoomStruct(
+	 //			id: "preview-room-1",
+	 //			name: "Preview Room",
+	 //			participants: ["user1", "user2"],
+	 //			messages: []
+	 //			)
+
+	 //.environmentObject(firestoreActions())

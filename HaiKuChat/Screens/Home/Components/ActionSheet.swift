@@ -9,7 +9,7 @@ struct RoomActionSheet: View {
 	 @State private var roomName = ""
 	 @State private var roomNameError: String?
 
-	 @State var firestore = firestoreActions()
+	 @EnvironmentObject var firestore: firestoreActions
 
 	 let tabs = ["Create Room", "Join Room"]
 
@@ -44,10 +44,7 @@ struct RoomActionSheet: View {
 										 }
 
 									Button(action: {
-										 dismiss()
-										 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-												navigateToChatRoom = true
-										 }
+										 firestore.joinRoom(withID: roomID)
 									}, label: {
 										 Text("Join Room")
 												.fontWeight(.bold)
@@ -117,15 +114,17 @@ struct RoomActionSheet: View {
 			.padding()
 			.padding(.top, 30)
 			.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-//			.onChange(of: firestore.roomID) { _, newID in
-//				 if let id = newID {
-//						print("🟢 Room created and ready: \(id)")
-//						DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-//							 dismiss()
-//							 navigateToChatRoom = true
-//						}
-//				 }
-//			}
+			.onChange(of: firestore.currentRoom) { _, newRoom in
+				 if let id = newRoom?.id {
+						print("🟢 Room created and ready: \(id)")
+						DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+							 withAnimation(.easeInOut) {
+									dismiss()
+									navigateToChatRoom = true
+							 }
+						}
+				 }
+			}
 	 }
 }
 
