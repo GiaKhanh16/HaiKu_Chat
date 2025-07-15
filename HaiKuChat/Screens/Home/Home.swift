@@ -73,7 +73,7 @@ struct Home: View {
 				 })
 				 .navigationDestination(isPresented: $navigateToChatRoom) {
 						if let room = firestore.currentRoom {
-							 testChat(room: room)
+									chatRoom(room: room)
 									.navigationBarBackButtonHidden(true)
 									.onAppear { isTabBarHidden = true }
 									.onDisappear { isTabBarHidden = false }
@@ -232,6 +232,62 @@ struct ExpandedSearchView: View {
 	 }
 }
 
-#Preview {
-	 TabBarView()
+
+
+struct MessageItem: View {
+	 var room: ChatRoomStruct
+
+			// Date formatter for message time display
+	 private var timeFormatter: DateFormatter {
+			let formatter = DateFormatter()
+			formatter.dateFormat = "h:mm a" // e.g., 10:57 AM
+			return formatter
+	 }
+
+			// Extract latest message time string
+	 private var latestMessageTime: String {
+			guard let messages = room.messages, !messages.isEmpty else {
+				 return ""
+			}
+				 // Find the latest message by timestamp
+			let latestMessage = messages.max(by: { $0.timestamp < $1.timestamp })
+			if let timestamp = latestMessage?.timestamp {
+				 return timeFormatter.string(from: timestamp)
+			}
+			return ""
+	 }
+
+	 var body: some View {
+			HStack(spacing: 20) {
+				 Image(systemName: "apple.logo")
+						.resizable()
+						.scaledToFill()
+						.frame(width: 40, height: 40)
+						.clipShape(Circle())
+				 VStack(alignment: .leading, spacing: 12) {
+						HStack {
+							 Text(room.name)
+									.fontWeight(.semibold)
+									.foregroundStyle(.black.opacity(0.7))
+							 Spacer()
+							 Text(latestMessageTime)
+									.font(.caption)
+									.foregroundStyle(.gray)
+						}
+							 // You can show the latest message text or any snippet if you want
+						if let lastMessage = room.messages?.last {
+							 Text(lastMessage.text_content)
+									.font(.callout)
+									.fontWeight(.light)
+									.foregroundStyle(.gray)
+						} else {
+							 Text("No messages yet")
+									.font(.callout)
+									.fontWeight(.light)
+									.foregroundStyle(.gray)
+						}
+				 }
+			}
+			.padding(4)
+	 }
 }

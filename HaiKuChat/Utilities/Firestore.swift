@@ -9,6 +9,7 @@ struct ChatRoomStruct: Identifiable, Equatable {
 	 var name: String
 	 var participants: [String]
 	 var messages: [MessageStruct]?
+	 var lastMessage: MessageStruct? // New property for the last message
 }
 
 struct MessageStruct: Identifiable, Equatable {
@@ -161,29 +162,29 @@ class firestoreActions: ObservableObject {
 			roomsRef.whereField("participants", arrayContains: user.uid)
 				 .order(by: "createdAt", descending: true)
 				 .getDocuments { snapshot, error in
-				 if let error = error {
-						self.errorMessage = "❌ Failed to fetch rooms: \(error.localizedDescription)"
-						print(self.errorMessage!)
-						return
-				 }
-
-				 guard let documents = snapshot?.documents else {
-						self.errorMessage = "❌ No rooms found"
-						print(self.errorMessage!)
-						return
-				 }
-
-				 self.chatRooms = documents.compactMap { doc in
-						let data = doc.data()
-						guard let name = data["name"] as? String,
-									let participants = data["participants"] as? [String] else {
-							 return nil
+						if let error = error {
+							 self.errorMessage = "❌ Failed to fetch rooms: \(error.localizedDescription)"
+							 print(self.errorMessage!)
+							 return
 						}
-						return ChatRoomStruct(id: doc.documentID, name: name, participants: participants)
-				 }
 
-				 print("✅ Fetched \(self.chatRooms.count) rooms created by user.")
-			}
+						guard let documents = snapshot?.documents else {
+							 self.errorMessage = "❌ No rooms found"
+							 print(self.errorMessage!)
+							 return
+						}
+
+						self.chatRooms = documents.compactMap { doc in
+							 let data = doc.data()
+							 guard let name = data["name"] as? String,
+										 let participants = data["participants"] as? [String] else {
+									return nil
+							 }
+							 return ChatRoomStruct(id: doc.documentID, name: name, participants: participants)
+						}
+
+						print("✅ Fetched \(self.chatRooms.count) rooms created by user.")
+				 }
 	 }
 }
 
@@ -233,15 +234,15 @@ extension firestoreActions {
 							 )
 						}
 
-						DispatchQueue.main.async {
-							 if var room = self.chatRooms.first(where: { $0.id == roomID }) {
-									room.messages = liveMessages
-									self.currentRoom = room
-							 } else if var room = self.currentRoom, room.id == roomID {
-									room.messages = liveMessages
-									self.currentRoom = room
-							 }
-						}
+//						DispatchQueue.main.async {
+//							 if var room = self.chatRooms.first(where: { $0.id == roomID }) {
+//									room.messages = liveMessages
+//									self.currentRoom = room
+//							 } else if var room = self.currentRoom, room.id == roomID {
+//									room.messages = liveMessages
+//									self.currentRoom = room
+//							 }
+//						}
 				 }
 	 }
 
@@ -270,11 +271,8 @@ extension firestoreActions {
 						if let error = error {
 							 DispatchQueue.main.async {
 									self.errorMessage = "❌ Failed to send message: \(error.localizedDescription)"
-							 }
+							 } 
 						}
 				 }
 	 }
 }
-
-
-
