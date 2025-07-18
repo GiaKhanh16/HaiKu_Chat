@@ -5,7 +5,7 @@ func countSyllables(_ text: String) -> Int {
 
 	 let vowels = Set("aeiouy")
 
-			// Hardcoded exceptions
+			// Exceptions dictionary with lowercase keys, no punctuation
 	 let exceptions: [String: Int] = [
 			"creating": 3,
 			"forehand": 2,
@@ -16,8 +16,6 @@ func countSyllables(_ text: String) -> Int {
 			"calculation": 4,
 			"foundation": 5,
 			"generation": 5,
-
-
 	 ]
 
 	 let words = text
@@ -28,15 +26,36 @@ func countSyllables(_ text: String) -> Int {
 	 var totalSyllables = 0
 
 	 for word in words {
-			let cleanWord = word.filter { $0.isLetter }
+				 // Remove trailing punctuation like .,!? etc.
+			let cleanedWord = word.trimmingCharacters(in: CharacterSet.punctuationCharacters)
+
+				 // Remove internal apostrophes, e.g. lovely's -> lovelys (optional)
+			let cleanWord = cleanedWord.filter { $0.isLetter }
+
 			if cleanWord.isEmpty { continue }
 
-				 // Use exception if available
+				 // Try to lookup exceptions directly
 			if let exceptionCount = exceptions[cleanWord] {
 				 totalSyllables += exceptionCount
 				 continue
 			}
 
+				 // If not found, try removing trailing 's' or 'es' (simple plural check)
+			if cleanWord.hasSuffix("es") {
+				 let singular = String(cleanWord.dropLast(2))
+				 if let exceptionCount = exceptions[singular] {
+						totalSyllables += exceptionCount
+						continue
+				 }
+			} else if cleanWord.hasSuffix("s") {
+				 let singular = String(cleanWord.dropLast(1))
+				 if let exceptionCount = exceptions[singular] {
+						totalSyllables += exceptionCount
+						continue
+				 }
+			}
+
+				 // Now fallback to general syllable counting
 			var syllableCount = 0
 			var previousIsVowel = false
 			let chars = Array(cleanWord)
@@ -49,14 +68,12 @@ func countSyllables(_ text: String) -> Int {
 				 previousIsVowel = isVowel
 			}
 
-				 // Subtract 1 if word ends in "e" (not "le")
 			if cleanWord.hasSuffix("e") &&
 						!cleanWord.hasSuffix("le") &&
 						syllableCount > 1 {
 				 syllableCount -= 1
 			}
 
-				 // Add 1 if ends in consonant + "le"
 			if cleanWord.hasSuffix("le") && cleanWord.count > 2 {
 				 let index = cleanWord.index(cleanWord.endIndex, offsetBy: -3)
 				 let beforeLe = cleanWord[index]
@@ -65,7 +82,6 @@ func countSyllables(_ text: String) -> Int {
 				 }
 			}
 
-				 // "ion" endings often add syllables (e.g. "creation")
 			if cleanWord.hasSuffix("ion") {
 				 syllableCount += 1
 			}

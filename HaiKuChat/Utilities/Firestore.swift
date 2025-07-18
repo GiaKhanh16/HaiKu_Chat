@@ -10,6 +10,7 @@ struct ChatRoomStruct: Identifiable, Equatable {
 	 var messages: [MessageStruct]?
 	 var lastMessage: LastMessageStruct?
 	 var readReceipts: [String: Date] = [:] // userID -> last read timestamp
+	 
 }
 
 struct LastMessageStruct: Equatable {
@@ -26,9 +27,11 @@ struct MessageStruct: Identifiable, Equatable {
 }
 
 
-
 @Observable
 class firestoreActions: ObservableObject {
+
+	 
+
 	 var chatRooms: [ChatRoomStruct] = []
 	 var errorMessage: String? = nil
 	 var currentRoom: ChatRoomStruct? = nil
@@ -143,7 +146,7 @@ class firestoreActions: ObservableObject {
 			roomsRef
 				 .whereField("participants", arrayContains: user.uid)
 				 .order(by: "lastMessage.timestamp", descending: true)
-				 .getDocuments { [weak self] snapshot, error in
+				 .addSnapshotListener { [weak self] snapshot, error in
 						guard let self = self else { return }
 
 						if let error = error {

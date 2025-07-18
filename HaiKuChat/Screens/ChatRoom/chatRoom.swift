@@ -28,7 +28,6 @@ struct chatRoom: View {
 													 Text(msg.text_content)
 															.padding()
 															.lineSpacing(15)
-//															.background(.gray.opacity(0.2))
 															.background( msg.senderID == auth.userSession?.uid ? .purple.opacity(0.6) : .purple.opacity(0.3))
 															.cornerRadius(10)
 															.frame(maxWidth: .infinity, alignment: msg.senderID == auth.userSession?.uid ? .trailing : .leading)
