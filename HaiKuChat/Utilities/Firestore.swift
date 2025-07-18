@@ -1,15 +1,21 @@
 import SwiftUI
 import FirebaseFirestore
 import FirebaseAuth
-
-
+import UserNotifications
 
 struct ChatRoomStruct: Identifiable, Equatable {
 	 var id: String
 	 var name: String
 	 var participants: [String]
 	 var messages: [MessageStruct]?
-	 var lastMessage: MessageStruct? // New property for the last message
+	 var lastMessage: LastMessageStruct?
+	 var readReceipts: [String: Date] = [:] // userID -> last read timestamp
+}
+
+struct LastMessageStruct: Equatable {
+	 var text: String
+	 var timestamp: Date
+	 var senderID: String
 }
 
 struct MessageStruct: Identifiable, Equatable {
@@ -20,12 +26,16 @@ struct MessageStruct: Identifiable, Equatable {
 }
 
 
+
 @Observable
 class firestoreActions: ObservableObject {
 	 var chatRooms: [ChatRoomStruct] = []
 	 var errorMessage: String? = nil
 	 var currentRoom: ChatRoomStruct? = nil
 
+	 private static var messageListener: ListenerRegistration?
+
+			// MARK: - Create Room
 	 func createRoom(withName name: String, roomID: String) {
 			guard let user = Auth.auth().currentUser else {
 				 errorMessage = "❌ No user signed in"
@@ -40,42 +50,47 @@ class firestoreActions: ObservableObject {
 
 				 if let error = error {
 						self.errorMessage = "❌ Error checking room: \(error.localizedDescription)"
-						print(self.errorMessage!)
 						return
 				 }
 
-				 if let snapshot = snapshot, snapshot.exists {
+				 if snapshot?.exists == true {
 						self.errorMessage = "❌ Room ID already exists. Try again."
-						print(self.errorMessage!)
 						return
 				 }
+
+				 let now = Timestamp(date: Date())
 
 				 let roomData: [String: Any] = [
 						"name": name,
 						"createdBy": user.uid,
-						"createdAt": Timestamp(),
-						"participants": [user.uid]
+						"createdAt": now,
+						"participants": [user.uid],
+						"readReceipts": [user.uid: now],
+						"lastMessage": [
+							 "text": "",
+							 "senderID": "",
+							 "timestamp": now
+						]
 				 ]
 
 				 roomRef.setData(roomData) { error in
 						if let error = error {
 							 self.errorMessage = "❌ Error creating room: \(error.localizedDescription)"
-							 print(self.errorMessage!)
 						} else {
-							 DispatchQueue.main.async {
-									self.currentRoom = ChatRoomStruct(
-										 id: roomID,
-										 name: name,
-										 participants: [user.uid]
-									)
-									print("✅ Room created with custom ID: \(roomID)")
-									self.fetchRoomsCreatedByCurrentUser()
-							 }
+							 self.currentRoom = ChatRoomStruct(
+									id: roomID,
+									name: name,
+									participants: [user.uid],
+									lastMessage: nil,
+									readReceipts: [user.uid: Date()]
+							 )
+							 self.fetchRoomsCreatedByCurrentUser()
 						}
 				 }
 			}
 	 }
 
+			// MARK: - Join Room
 	 func joinRoom(withID roomID: String) {
 			guard let user = Auth.auth().currentUser else {
 				 self.errorMessage = "❌ No user signed in"
@@ -99,57 +114,23 @@ class firestoreActions: ObservableObject {
 				 }
 
 				 var participants = data["participants"] as? [String] ?? []
+				 var readReceipts = data["readReceipts"] as? [String: Timestamp] ?? [:]
 
-						// Check if user is already in the room
-				 if participants.contains(user.uid) {
-						print("✅ User already joined this room.")
-						self.fetchRoomDetails(for: roomID) // Load room locally
-						return
+				 if !participants.contains(user.uid) {
+						participants.append(user.uid)
+						readReceipts[user.uid] = Timestamp(date: Date())
+						roomRef.updateData([
+							 "participants": participants,
+							 "readReceipts": readReceipts
+						])
 				 }
 
-						// Add user to participants
-				 participants.append(user.uid)
-				 roomRef.updateData(["participants": participants]) { error in
-						if let error = error {
-							 self.errorMessage = "❌ Failed to join room: \(error.localizedDescription)"
-						} else {
-							 print("✅ Successfully joined the room.")
-							 self.fetchRoomDetails(for: roomID)
-							 self.fetchRoomsCreatedByCurrentUser()
-						}
-				 }
+				 self.currentRoom = self.parseRoom(docID: roomID, data: data)
+				 self.fetchRoomsCreatedByCurrentUser()
 			}
 	 }
 
-	 func fetchRoomDetails(for roomID: String) {
-			let db = Firestore.firestore()
-			let roomRef = db.collection("rooms").document(roomID)
-
-			roomRef.getDocument { [weak self] snapshot, error in
-				 guard let self = self else { return }
-
-				 if let error = error {
-						self.errorMessage = "❌ Failed to fetch room: \(error.localizedDescription)"
-						print(self.errorMessage!)
-						return
-				 }
-
-				 guard let data = snapshot?.data() else {
-						self.errorMessage = "❌ Room not found."
-						print(self.errorMessage!)
-						return
-				 }
-
-				 let name = data["name"] as? String ?? "Unknown Room"
-				 let participants = data["participants"] as? [String] ?? []
-
-				 DispatchQueue.main.async {
-						self.currentRoom = ChatRoomStruct(id: roomID, name: name, participants: participants)
-						print("✅ Room loaded: \(self.currentRoom?.name ?? "Unnamed")")
-				 }
-			}
-	 }
-
+			// MARK: - Fetch Rooms (sorted by lastMessage.timestamp)
 	 func fetchRoomsCreatedByCurrentUser() {
 			guard let user = Auth.auth().currentUser else {
 				 self.errorMessage = "❌ No user signed in"
@@ -159,42 +140,26 @@ class firestoreActions: ObservableObject {
 			let db = Firestore.firestore()
 			let roomsRef = db.collection("rooms")
 
-			roomsRef.whereField("participants", arrayContains: user.uid)
-				 .order(by: "createdAt", descending: true)
-				 .getDocuments { snapshot, error in
+			roomsRef
+				 .whereField("participants", arrayContains: user.uid)
+				 .order(by: "lastMessage.timestamp", descending: true)
+				 .getDocuments { [weak self] snapshot, error in
+						guard let self = self else { return }
+
 						if let error = error {
 							 self.errorMessage = "❌ Failed to fetch rooms: \(error.localizedDescription)"
-							 print(self.errorMessage!)
 							 return
 						}
 
-						guard let documents = snapshot?.documents else {
-							 self.errorMessage = "❌ No rooms found"
-							 print(self.errorMessage!)
-							 return
-						}
-
-						self.chatRooms = documents.compactMap { doc in
-							 let data = doc.data()
-							 guard let name = data["name"] as? String,
-										 let participants = data["participants"] as? [String] else {
-									return nil
-							 }
-							 return ChatRoomStruct(id: doc.documentID, name: name, participants: participants)
-						}
-
-						print("✅ Fetched \(self.chatRooms.count) rooms created by user.")
+						self.chatRooms = snapshot?.documents.compactMap {
+							 self.parseRoom(docID: $0.documentID, data: $0.data())
+						} ?? []
 				 }
 	 }
-}
 
-extension firestoreActions {
-
-	 private static var messageListener: ListenerRegistration?
-
+			// MARK: - Listen to Messages
 	 func listenToMessages(for roomID: String) {
 			let db = Firestore.firestore()
-
 			firestoreActions.messageListener?.remove()
 
 			firestoreActions.messageListener = db.collection("rooms")
@@ -205,44 +170,27 @@ extension firestoreActions {
 						guard let self = self else { return }
 
 						if let error = error {
-							 DispatchQueue.main.async {
-									self.errorMessage = "❌ Realtime fetch failed: \(error.localizedDescription)"
-							 }
+							 self.errorMessage = "❌ Realtime fetch failed: \(error.localizedDescription)"
 							 return
 						}
 
-						guard let documents = snapshot?.documents else {
-							 DispatchQueue.main.async {
-									self.errorMessage = "❌ No messages found."
-							 }
-							 return
-						}
-
-						let liveMessages: [MessageStruct] = documents.compactMap { doc in
+						let liveMessages = snapshot?.documents.compactMap { doc -> MessageStruct? in
 							 let data = doc.data()
 							 guard let senderID = data["senderID"] as? String,
-										 let text_content = data["text_content"] as? String,
-										 let timestamp = (data["timestamp"] as? Timestamp)?.dateValue() else {
-									return nil
-							 }
+										 let text = data["text"] as? String,
+										 let timestamp = (data["timestamp"] as? Timestamp)?.dateValue()
+							 else { return nil }
 
-							 return MessageStruct(
-									id: doc.documentID,
-									senderID: senderID,
-									text_content: text_content,
-									timestamp: timestamp
-							 )
+							 return MessageStruct(id: doc.documentID, senderID: senderID, text_content: text, timestamp: timestamp)
+						} ?? []
+
+						if var room = self.chatRooms.first(where: { $0.id == roomID }) {
+							 room.messages = liveMessages
+							 self.currentRoom = room
+						} else if var room = self.currentRoom, room.id == roomID {
+							 room.messages = liveMessages
+							 self.currentRoom = room
 						}
-
-//						DispatchQueue.main.async {
-//							 if var room = self.chatRooms.first(where: { $0.id == roomID }) {
-//									room.messages = liveMessages
-//									self.currentRoom = room
-//							 } else if var room = self.currentRoom, room.id == roomID {
-//									room.messages = liveMessages
-//									self.currentRoom = room
-//							 }
-//						}
 				 }
 	 }
 
@@ -251,6 +199,7 @@ extension firestoreActions {
 			firestoreActions.messageListener = nil
 	 }
 
+			// MARK: - Post Message
 	 func postMessage(to roomID: String, content: String) {
 			let db = Firestore.firestore()
 			guard let userID = Auth.auth().currentUser?.uid else {
@@ -258,21 +207,71 @@ extension firestoreActions {
 				 return
 			}
 
+			let now = Timestamp(date: Date())
 			let newMessage: [String: Any] = [
 				 "senderID": userID,
-				 "text_content": content,
-				 "timestamp": Timestamp()
+				 "text": content,
+				 "timestamp": now
 			]
 
 			db.collection("rooms")
 				 .document(roomID)
 				 .collection("messages")
-				 .addDocument(data: newMessage) { error in
+				 .addDocument(data: newMessage) { [weak self] error in
 						if let error = error {
-							 DispatchQueue.main.async {
-									self.errorMessage = "❌ Failed to send message: \(error.localizedDescription)"
-							 } 
+							 self?.errorMessage = "❌ Failed to send message: \(error.localizedDescription)"
+							 return
 						}
+
+						db.collection("rooms")
+							 .document(roomID)
+							 .updateData([
+									"lastMessage": [
+										 "text": content,
+										 "senderID": userID,
+										 "timestamp": now
+									]
+							 ])
 				 }
+	 }
+
+			// MARK: - Mark Room As Read
+	 func markRoomAsRead(roomID: String) {
+			guard let userID = Auth.auth().currentUser?.uid else { return }
+			let db = Firestore.firestore()
+			db.collection("rooms").document(roomID).updateData([
+				 "readReceipts.\(userID)": Timestamp(date: Date())
+			])
+	 }
+
+			// MARK: - Helper
+	 private func parseRoom(docID: String, data: [String: Any]) -> ChatRoomStruct? {
+			guard let name = data["name"] as? String,
+						let participants = data["participants"] as? [String]
+			else { return nil }
+
+			var lastMessage: LastMessageStruct? = nil
+			if let lastMsg = data["lastMessage"] as? [String: Any],
+				 let text = lastMsg["text"] as? String,
+				 let timestamp = (lastMsg["timestamp"] as? Timestamp)?.dateValue(),
+				 let senderID = lastMsg["senderID"] as? String {
+				 lastMessage = LastMessageStruct(text: text, timestamp: timestamp, senderID: senderID)
+			}
+
+			var readReceipts: [String: Date] = [:]
+			if let raw = data["readReceipts"] as? [String: Timestamp] {
+				 for (uid, ts) in raw {
+						readReceipts[uid] = ts.dateValue()
+				 }
+			}
+
+			return ChatRoomStruct(
+				 id: docID,
+				 name: name,
+				 participants: participants,
+				 messages: nil,
+				 lastMessage: lastMessage,
+				 readReceipts: readReceipts
+			)
 	 }
 }

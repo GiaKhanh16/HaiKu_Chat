@@ -1,11 +1,29 @@
 import SwiftUI
 import FirebaseCore
+import UserNotifications
 
-class AppDelegate: NSObject, UIApplicationDelegate {
+class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
 	 func application(_ application: UIApplication,
 										didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
 			FirebaseApp.configure()
+
+			let center = UNUserNotificationCenter.current()
+			center.delegate = self
+			center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+				 if let error = error {
+						print("Notification permission error: \(error.localizedDescription)")
+				 } else {
+						print("Notification permission granted: \(granted)")
+				 }
+			}
+
 			return true
+	 }
+
+	 func userNotificationCenter(_ center: UNUserNotificationCenter,
+															 willPresent notification: UNNotification,
+															 withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+			completionHandler([.banner, .sound])
 	 }
 }
 
@@ -24,13 +42,7 @@ struct HaiKuChatApp: App {
 			}
 	 }
 }
-
-
-#Preview {
-	 ContentView()
-}
-
-	 //testChat(
+	 //chatRoom(
 	 //	 room: ChatRoomStruct(
 	 //			id: "preview-room-1",
 	 //			name: "Preview Room",

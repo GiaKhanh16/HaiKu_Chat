@@ -21,19 +21,24 @@ struct Home: View {
 							 } action: { newValue in
 									offsetY = newValue
 							 }
+
 						LazyVStack {
 							 ForEach(firestore.chatRooms) { room in
 									NavigationLink {
 										 chatRoom(room: room)
 												.navigationBarBackButtonHidden(true)
-												.onAppear { isTabBarHidden = true }
-												.onDisappear { isTabBarHidden = false }
+												.onAppear {
+													 isTabBarHidden = true
+													 firestore.markRoomAsRead(roomID: room.id)  // <-- Mark room as read here
+												}
+												.onDisappear {
+													 isTabBarHidden = false
+												}
 												.hideFloatingTabBar(isTabBarHidden)
 									} label: {
 										 MessageItem(room: room)
-
-
 									}
+
 									Divider()
 							 }
 
@@ -234,28 +239,10 @@ struct ExpandedSearchView: View {
 
 
 
+import FirebaseAuth
+
 struct MessageItem: View {
 	 var room: ChatRoomStruct
-
-			// Date formatter for message time display
-	 private var timeFormatter: DateFormatter {
-			let formatter = DateFormatter()
-			formatter.dateFormat = "h:mm a" // e.g., 10:57 AM
-			return formatter
-	 }
-
-			// Extract latest message time string
-	 private var latestMessageTime: String {
-			guard let messages = room.messages, !messages.isEmpty else {
-				 return ""
-			}
-				 // Find the latest message by timestamp
-			let latestMessage = messages.max(by: { $0.timestamp < $1.timestamp })
-			if let timestamp = latestMessage?.timestamp {
-				 return timeFormatter.string(from: timestamp)
-			}
-			return ""
-	 }
 
 	 var body: some View {
 			HStack(spacing: 20) {
@@ -264,30 +251,51 @@ struct MessageItem: View {
 						.scaledToFill()
 						.frame(width: 40, height: 40)
 						.clipShape(Circle())
+
 				 VStack(alignment: .leading, spacing: 12) {
 						HStack {
 							 Text(room.name)
-									.fontWeight(.semibold)
+									.fontWeight(.thin)
 									.foregroundStyle(.black.opacity(0.7))
+
 							 Spacer()
-							 Text(latestMessageTime)
+
+							 Text(formatTime(room.lastMessage?.timestamp)) // Show time
 									.font(.caption)
 									.foregroundStyle(.gray)
 						}
-							 // You can show the latest message text or any snippet if you want
-						if let lastMessage = room.messages?.last {
-							 Text(lastMessage.text_content)
-									.font(.callout)
-									.fontWeight(.light)
-									.foregroundStyle(.gray)
+
+							 // Use lastMessage instead of messages?.last
+						if let lastMessage = room.lastMessage,
+							 let uid = Auth.auth().currentUser?.uid {
+							 let lastRead = room.readReceipts[uid] ?? .distantPast
+
+							 if lastMessage.senderID != uid && lastMessage.timestamp > lastRead {
+									Text("Unread")
+										 .font(.callout)
+										 .fontWeight(.semibold)
+										 .foregroundStyle(.blue)
+							 } else {
+									Text(lastMessage.text.components(separatedBy: .newlines).first ?? lastMessage.text)
+										 .font(.callout)
+										 .fontWeight(.light)
+										 .foregroundStyle(.gray)
+							 }
 						} else {
-							 Text("No messages yet")
+							 Text("No new messages yet.")
 									.font(.callout)
-									.fontWeight(.light)
 									.foregroundStyle(.gray)
 						}
 				 }
 			}
 			.padding(4)
+	 }
+
+			// Helper for formatting time
+	 func formatTime(_ date: Date?) -> String {
+			guard let date = date else { return "" }
+			let formatter = DateFormatter()
+			formatter.dateFormat = "h:mm a"
+			return formatter.string(from: date)
 	 }
 }
